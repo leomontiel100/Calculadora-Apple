@@ -1,0 +1,880 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Não Pifou — Calculadora de Compra</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --green: #1DB954;
+    --green-dark: #16a34a;
+    --green-soft: #dcfce7;
+    --yellow: #f59e0b;
+    --yellow-soft: #fef3c7;
+    --red: #ef4444;
+    --red-soft: #fee2e2;
+    --bg: #0f0f0f;
+    --surface: #1a1a1a;
+    --surface2: #242424;
+    --surface3: #2e2e2e;
+    --border: rgba(255,255,255,0.08);
+    --border-strong: rgba(255,255,255,0.15);
+    --text: #f5f5f5;
+    --text-muted: #888;
+    --text-soft: #bbb;
+    --radius: 14px;
+    --radius-sm: 8px;
+  }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* HEADER */
+  header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1.25rem 2rem;
+    border-bottom: 1px solid var(--border);
+    background: var(--surface);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+  .logo {
+    font-family: 'Syne', sans-serif;
+    font-weight: 800;
+    font-size: 1.3rem;
+    color: var(--green);
+    letter-spacing: -0.02em;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .logo-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--green); }
+  .header-tabs { display: flex; gap: 4px; background: var(--surface2); border-radius: 10px; padding: 4px; }
+  .tab-btn {
+    background: none; border: none; color: var(--text-muted); font-family: 'DM Sans', sans-serif;
+    font-size: 13px; padding: 6px 14px; border-radius: 7px; cursor: pointer; transition: all .2s;
+  }
+  .tab-btn.active { background: var(--surface3); color: var(--text); }
+  .admin-btn {
+    background: none; border: 1px solid var(--border); color: var(--text-muted); padding: 6px 12px;
+    border-radius: 8px; font-size: 12px; cursor: pointer; transition: all .2s; font-family: 'DM Sans', sans-serif;
+  }
+  .admin-btn:hover { border-color: var(--border-strong); color: var(--text); }
+
+  /* LAYOUT */
+  main { display: flex; flex: 1; }
+
+  /* PANEL */
+  .panel {
+    flex: 1;
+    padding: 2rem;
+    max-width: 720px;
+    margin: 0 auto;
+  }
+
+  /* TAB CONTENT */
+  .tab-content { display: none; }
+  .tab-content.active { display: block; }
+
+  /* STEP */
+  .step {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 1.5rem;
+    margin-bottom: 1rem;
+    transition: border-color .2s;
+  }
+  .step:hover { border-color: var(--border-strong); }
+  .step-label {
+    font-size: 11px; font-weight: 500; letter-spacing: .08em; text-transform: uppercase;
+    color: var(--green); margin-bottom: 10px;
+  }
+  .step-title { font-family: 'Syne', sans-serif; font-size: 1rem; font-weight: 600; margin-bottom: 1rem; color: var(--text); }
+
+  /* MODEL SELECT */
+  .model-select {
+    width: 100%;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    padding: 10px 14px;
+    cursor: pointer;
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23888' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 12px center;
+  }
+  .model-select:focus { outline: none; border-color: var(--green); }
+
+  /* PRICE TAG */
+  .price-tag {
+    display: flex; align-items: baseline; gap: 6px; margin-top: 12px;
+    background: var(--surface2); border-radius: var(--radius-sm); padding: 12px 14px;
+  }
+  .price-currency { font-size: 13px; color: var(--text-muted); }
+  .price-value { font-family: 'Syne', sans-serif; font-size: 2rem; font-weight: 700; color: var(--green); }
+  .price-zero { color: var(--text-muted); }
+
+  /* BATTERY */
+  .battery-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+  .batt-option {
+    background: var(--surface2); border: 1.5px solid var(--border); border-radius: var(--radius-sm);
+    padding: 14px 10px; text-align: center; cursor: pointer; transition: all .2s;
+  }
+  .batt-option:hover { border-color: var(--border-strong); }
+  .batt-option.selected-green { border-color: var(--green); background: rgba(29,185,84,.08); }
+  .batt-option.selected-yellow { border-color: var(--yellow); background: rgba(245,158,11,.08); }
+  .batt-option.selected-red { border-color: var(--red); background: rgba(239,68,68,.08); }
+  .batt-dot { width: 10px; height: 10px; border-radius: 50%; margin: 0 auto 8px; }
+  .batt-dot.green { background: var(--green); }
+  .batt-dot.yellow { background: var(--yellow); }
+  .batt-dot.red { background: var(--red); }
+  .batt-label { font-size: 12px; font-weight: 500; color: var(--text); margin-bottom: 4px; }
+  .batt-sub { font-size: 11px; color: var(--text-muted); }
+  .batt-discount { font-size: 12px; margin-top: 6px; }
+
+  /* DEFECTS */
+  .defects-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; }
+  .defect-item {
+    display: flex; align-items: center; gap: 10px;
+    background: var(--surface2); border: 1px solid var(--border); border-radius: var(--radius-sm);
+    padding: 10px 12px; cursor: pointer; transition: all .2s;
+  }
+  .defect-item:hover { border-color: var(--border-strong); }
+  .defect-item.active { border-color: var(--red); background: rgba(239,68,68,.08); }
+  .defect-checkbox {
+    width: 16px; height: 16px; border-radius: 4px; border: 1.5px solid var(--border-strong);
+    display: flex; align-items: center; justify-content: center; flex-shrink: 0; transition: all .2s;
+  }
+  .defect-item.active .defect-checkbox { background: var(--red); border-color: var(--red); }
+  .defect-check { color: white; font-size: 10px; display: none; }
+  .defect-item.active .defect-check { display: block; }
+  .defect-name { font-size: 13px; color: var(--text-soft); flex: 1; }
+  .defect-price { font-size: 12px; color: var(--red); font-weight: 500; white-space: nowrap; }
+
+  /* SIMULATOR */
+  .sim-card {
+    background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.5rem; margin-bottom: 1rem;
+  }
+  .sim-title { font-family: 'Syne', sans-serif; font-size: 1rem; font-weight: 600; margin-bottom: 1.25rem; }
+  .sim-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+  .sim-label { font-size: 13px; color: var(--text-muted); }
+  .sim-value { font-size: 13px; font-weight: 500; }
+
+  .value-input {
+    width: 100%; background: var(--surface2); border: 1px solid var(--border); border-radius: var(--radius-sm);
+    color: var(--text); font-family: 'DM Sans', sans-serif; font-size: 1.4rem; font-weight: 500;
+    padding: 12px 14px; margin-bottom: 1rem;
+  }
+  .value-input:focus { outline: none; border-color: var(--green); }
+
+  /* PAYMENT MODE */
+  .payment-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 1rem; }
+  .pay-btn {
+    background: var(--surface2); border: 1.5px solid var(--border); border-radius: var(--radius-sm);
+    padding: 12px; text-align: center; cursor: pointer; transition: all .2s;
+  }
+  .pay-btn:hover { border-color: var(--border-strong); }
+  .pay-btn.active { border-color: var(--green); background: rgba(29,185,84,.08); }
+  .pay-btn-icon { font-size: 18px; margin-bottom: 4px; }
+  .pay-btn-label { font-size: 12px; font-weight: 500; }
+  .pay-btn-sub { font-size: 11px; color: var(--text-muted); }
+
+  /* CARD FLAGS */
+  .flag-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; margin-bottom: 1rem; }
+  .flag-btn {
+    background: var(--surface2); border: 1.5px solid var(--border); border-radius: var(--radius-sm);
+    padding: 8px 6px; text-align: center; cursor: pointer; transition: all .2s; font-size: 11px; color: var(--text-muted);
+  }
+  .flag-btn:hover { border-color: var(--border-strong); color: var(--text); }
+  .flag-btn.active { border-color: var(--green); color: var(--green); background: rgba(29,185,84,.08); }
+
+  /* INSTALLMENTS */
+  .install-table { width: 100%; border-collapse: collapse; margin-top: 8px; }
+  .install-table th { font-size: 11px; color: var(--text-muted); text-align: left; padding: 6px 8px; border-bottom: 1px solid var(--border); }
+  .install-table td { font-size: 13px; padding: 8px; border-bottom: 1px solid var(--border); }
+  .install-table tr:last-child td { border-bottom: none; }
+  .install-table tr { cursor: pointer; transition: background .15s; }
+  .install-table tr:hover { background: var(--surface2); }
+  .install-table tr.selected { background: rgba(29,185,84,.08); }
+  .install-table tr.selected td { color: var(--green); }
+
+  /* SUMMARY */
+  .summary-box {
+    background: linear-gradient(135deg, rgba(29,185,84,.15), rgba(29,185,84,.05));
+    border: 1px solid rgba(29,185,84,.3);
+    border-radius: var(--radius); padding: 1.5rem; margin-bottom: 1rem;
+  }
+  .summary-final-label { font-size: 12px; color: var(--green); text-transform: uppercase; letter-spacing: .06em; margin-bottom: 4px; }
+  .summary-final-value { font-family: 'Syne', sans-serif; font-size: 2.5rem; font-weight: 800; color: var(--green); }
+  .summary-divider { border: none; border-top: 1px solid var(--border); margin: 1rem 0; }
+  .summary-row { display: flex; justify-content: space-between; font-size: 13px; margin-bottom: 6px; }
+  .summary-row .label { color: var(--text-muted); }
+  .summary-row .val { font-weight: 500; }
+  .summary-row .disc { color: var(--red); }
+
+  /* WHATSAPP TAB */
+  .wa-form { display: flex; flex-direction: column; gap: 12px; }
+  .wa-field label { display: block; font-size: 12px; color: var(--text-muted); margin-bottom: 5px; }
+  .wa-field input, .wa-field select, .wa-field textarea {
+    width: 100%; background: var(--surface2); border: 1px solid var(--border); border-radius: var(--radius-sm);
+    color: var(--text); font-family: 'DM Sans', sans-serif; font-size: 13px; padding: 9px 12px;
+  }
+  .wa-field input:focus, .wa-field select:focus, .wa-field textarea:focus { outline: none; border-color: var(--green); }
+  .wa-preview {
+    background: var(--surface2); border: 1px solid var(--border); border-radius: var(--radius-sm);
+    padding: 14px; font-size: 13px; line-height: 1.7; white-space: pre-wrap; color: var(--text-soft);
+    min-height: 120px;
+  }
+  .wa-copy-btn {
+    background: var(--green); color: #000; font-family: 'DM Sans', sans-serif; font-weight: 600;
+    font-size: 14px; border: none; border-radius: var(--radius-sm); padding: 12px; cursor: pointer;
+    width: 100%; transition: background .2s;
+  }
+  .wa-copy-btn:hover { background: var(--green-dark); }
+  .wa-copy-btn:active { transform: scale(.98); }
+
+  /* MODAL ADMIN */
+  .modal-overlay {
+    position: fixed; inset: 0; background: rgba(0,0,0,.8); z-index: 200;
+    display: none; align-items: center; justify-content: center;
+  }
+  .modal-overlay.open { display: flex; }
+  .modal {
+    background: var(--surface); border: 1px solid var(--border-strong); border-radius: var(--radius);
+    width: 100%; max-width: 420px; padding: 1.5rem;
+  }
+  .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem; }
+  .modal-title { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 1rem; }
+  .modal-close { background: none; border: none; color: var(--text-muted); font-size: 20px; cursor: pointer; }
+  .modal-close:hover { color: var(--text); }
+
+  /* PIN PAD */
+  .pin-display {
+    background: var(--surface2); border: 1px solid var(--border); border-radius: var(--radius-sm);
+    padding: 12px; text-align: center; font-family: 'Syne', sans-serif; font-size: 1.5rem;
+    letter-spacing: .4em; margin-bottom: 1rem; min-height: 54px; color: var(--green);
+  }
+  .pin-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+  .pin-key {
+    background: var(--surface2); border: 1px solid var(--border); border-radius: var(--radius-sm);
+    padding: 14px; text-align: center; font-family: 'Syne', sans-serif; font-size: 1.1rem;
+    cursor: pointer; transition: all .15s;
+  }
+  .pin-key:hover { background: var(--surface3); }
+  .pin-key:active { transform: scale(.95); }
+  .pin-key.wide { grid-column: span 2; }
+  .pin-error { color: var(--red); font-size: 12px; text-align: center; margin-top: 8px; display: none; }
+
+  /* ADMIN PANEL */
+  .admin-panel { display: none; }
+  .admin-panel.open { display: block; }
+  .admin-section { margin-bottom: 1.5rem; }
+  .admin-section-title { font-size: 12px; text-transform: uppercase; letter-spacing: .06em; color: var(--text-muted); margin-bottom: 10px; }
+  .price-row { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+  .price-row label { flex: 1; font-size: 13px; }
+  .price-row input {
+    width: 100px; background: var(--surface2); border: 1px solid var(--border); border-radius: 6px;
+    color: var(--text); font-family: 'DM Sans', sans-serif; font-size: 13px; padding: 6px 10px;
+  }
+  .save-btn {
+    background: var(--green); color: #000; font-family: 'DM Sans', sans-serif; font-weight: 600;
+    font-size: 13px; border: none; border-radius: var(--radius-sm); padding: 10px 20px; cursor: pointer;
+    transition: background .2s;
+  }
+  .save-btn:hover { background: var(--green-dark); }
+
+  /* TOAST */
+  .toast {
+    position: fixed; bottom: 2rem; left: 50%; transform: translateX(-50%) translateY(20px);
+    background: var(--surface3); border: 1px solid var(--border-strong); border-radius: 20px;
+    padding: 10px 20px; font-size: 13px; opacity: 0; transition: all .3s; z-index: 300; pointer-events: none;
+  }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+  /* RESPONSIVE */
+  @media (max-width: 600px) {
+    header { padding: 1rem; flex-wrap: wrap; gap: 8px; }
+    .panel { padding: 1rem; }
+    .defects-grid { grid-template-columns: 1fr; }
+    .flag-grid { grid-template-columns: repeat(3, 1fr); }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">
+    <div class="logo-dot"></div>
+    Não Pifou
+  </div>
+  <div class="header-tabs">
+    <button class="tab-btn active" onclick="switchTab('compra')">📱 Compra</button>
+    <button class="tab-btn" onclick="switchTab('parcelamento')">💳 Parcelamento</button>
+    <button class="tab-btn" onclick="switchTab('whatsapp')">💬 WhatsApp</button>
+  </div>
+  <button class="admin-btn" onclick="openAdmin()">⚙️ Admin</button>
+</header>
+
+<main>
+<div class="panel">
+
+  <!-- TAB: COMPRA -->
+  <div class="tab-content active" id="tab-compra">
+
+    <!-- STEP 1 -->
+    <div class="step">
+      <div class="step-label">Passo 1</div>
+      <div class="step-title">Qual é o modelo?</div>
+      <select class="model-select" id="modelSelect" onchange="updateModel()">
+        <option value="">— Selecione o modelo —</option>
+        <option value="iphone_16_pro_max">iPhone 16 Pro Max</option>
+        <option value="iphone_16_pro">iPhone 16 Pro</option>
+        <option value="iphone_16_plus">iPhone 16 Plus</option>
+        <option value="iphone_16">iPhone 16</option>
+        <option value="iphone_15_pro_max">iPhone 15 Pro Max</option>
+        <option value="iphone_15_pro">iPhone 15 Pro</option>
+        <option value="iphone_15_plus">iPhone 15 Plus</option>
+        <option value="iphone_15">iPhone 15</option>
+        <option value="iphone_14_pro_max">iPhone 14 Pro Max</option>
+        <option value="iphone_14_pro">iPhone 14 Pro</option>
+        <option value="iphone_14">iPhone 14</option>
+        <option value="iphone_13">iPhone 13</option>
+        <option value="iphone_13_mini">iPhone 13 Mini</option>
+        <option value="iphone_12">iPhone 12</option>
+        <option value="iphone_se_3">iPhone SE (3ª ger.)</option>
+      </select>
+      <div class="price-tag">
+        <span class="price-currency">R$</span>
+        <span class="price-value price-zero" id="basePrice">—</span>
+      </div>
+    </div>
+
+    <!-- STEP 2 -->
+    <div class="step">
+      <div class="step-label">Passo 2</div>
+      <div class="step-title">Estado da bateria</div>
+      <div class="battery-grid">
+        <div class="batt-option selected-green" onclick="selectBatt(this, 'green', 0)" data-discount="0">
+          <div class="batt-dot green"></div>
+          <div class="batt-label">Acima de 85%</div>
+          <div class="batt-discount" style="color: var(--green)">Sem desconto</div>
+        </div>
+        <div class="batt-option" onclick="selectBatt(this, 'yellow', 150)" data-discount="150">
+          <div class="batt-dot yellow"></div>
+          <div class="batt-label">Entre 60–85%</div>
+          <div class="batt-discount" style="color: var(--yellow)" id="battDisc2">−R$ 150</div>
+        </div>
+        <div class="batt-option" onclick="selectBatt(this, 'red', 300)" data-discount="300">
+          <div class="batt-dot red"></div>
+          <div class="batt-label">Abaixo de 60%</div>
+          <div class="batt-discount" style="color: var(--red)" id="battDisc3">−R$ 300</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- STEP 3 -->
+    <div class="step">
+      <div class="step-label">Passo 3</div>
+      <div class="step-title">Defeitos presentes</div>
+      <div class="defects-grid" id="defectsGrid"></div>
+    </div>
+
+    <!-- RESUMO -->
+    <div class="summary-box" id="summaryBox" style="display:none">
+      <div class="summary-final-label">Valor de compra</div>
+      <div class="summary-final-value" id="finalPrice">R$ —</div>
+      <hr class="summary-divider">
+      <div class="summary-row"><span class="label">Preço base</span><span class="val" id="s-base">—</span></div>
+      <div class="summary-row"><span class="label">Bateria</span><span class="val disc" id="s-batt">—</span></div>
+      <div class="summary-row"><span class="label">Defeitos</span><span class="val disc" id="s-defects">—</span></div>
+    </div>
+  </div>
+
+  <!-- TAB: PARCELAMENTO -->
+  <div class="tab-content" id="tab-parcelamento">
+    <div class="sim-card">
+      <div class="sim-title">Simulador de parcelamento</div>
+
+      <div class="step-label" style="margin-bottom:6px">Valor do aparelho (R$)</div>
+      <input type="number" class="value-input" id="simValue" placeholder="0,00" oninput="calcInstall()">
+
+      <div class="step-label" style="margin-bottom:8px">Modo de pagamento</div>
+      <div class="payment-grid">
+        <div class="pay-btn active" onclick="selectPayMode(this,'maquininha')" id="pm-maquininha">
+          <div class="pay-btn-icon">📱</div>
+          <div class="pay-btn-label">Maquininha</div>
+          <div class="pay-btn-sub">Presencial · D+1</div>
+        </div>
+        <div class="pay-btn" onclick="selectPayMode(this,'link')" id="pm-link">
+          <div class="pay-btn-icon">💻</div>
+          <div class="pay-btn-label">Link de pagamento</div>
+          <div class="pay-btn-sub">Online</div>
+        </div>
+      </div>
+
+      <div class="step-label" style="margin-bottom:8px">Bandeira</div>
+      <div class="flag-grid">
+        <div class="flag-btn active" onclick="selectFlag(this,'visa')">Visa</div>
+        <div class="flag-btn" onclick="selectFlag(this,'master')">Master</div>
+        <div class="flag-btn" onclick="selectFlag(this,'elo')">Elo</div>
+        <div class="flag-btn" onclick="selectFlag(this,'amex')">Amex</div>
+      </div>
+
+      <div style="margin-bottom:6px; font-size:13px; color:var(--text-muted)" id="debitInfo">
+        💳 Débito: calculando...
+      </div>
+
+      <table class="install-table" id="installTable">
+        <thead>
+          <tr>
+            <th>Parcelas</th>
+            <th>Valor / x</th>
+            <th>Total</th>
+            <th>Taxa</th>
+          </tr>
+        </thead>
+        <tbody id="installBody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- TAB: WHATSAPP -->
+  <div class="tab-content" id="tab-whatsapp">
+    <div class="sim-card">
+      <div class="sim-title">Dados do anúncio</div>
+      <div class="wa-form">
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px">
+          <div class="wa-field">
+            <label>Modelo</label>
+            <input type="text" id="wa-modelo" placeholder="Ex: iPhone 15 Pro" oninput="updateWA()">
+          </div>
+          <div class="wa-field">
+            <label>Armazenamento</label>
+            <select id="wa-storage" onchange="updateWA()">
+              <option>64GB</option><option>128GB</option><option selected>256GB</option>
+              <option>512GB</option><option>1TB</option>
+            </select>
+          </div>
+          <div class="wa-field">
+            <label>Cor</label>
+            <input type="text" id="wa-cor" placeholder="Ex: Natural Titanium" oninput="updateWA()">
+          </div>
+          <div class="wa-field">
+            <label>Bateria %</label>
+            <input type="number" id="wa-batt" placeholder="Ex: 89" min="0" max="100" oninput="updateWA()">
+          </div>
+          <div class="wa-field">
+            <label>Código interno</label>
+            <input type="text" id="wa-codigo" placeholder="Ex: #001" oninput="updateWA()">
+          </div>
+          <div class="wa-field">
+            <label>Garantia (meses)</label>
+            <input type="number" id="wa-garantia" placeholder="Ex: 3" oninput="updateWA()">
+          </div>
+        </div>
+        <div class="wa-field">
+          <label>💬 Prévia da mensagem</label>
+          <div class="wa-preview" id="wa-preview">Preencha os campos acima...</div>
+        </div>
+        <button class="wa-copy-btn" onclick="copyWA()">📋 Copiar para WhatsApp</button>
+      </div>
+    </div>
+  </div>
+
+</div>
+</main>
+
+<!-- MODAL ADMIN -->
+<div class="modal-overlay" id="adminOverlay">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">🔒 Área Admin</div>
+      <button class="modal-close" onclick="closeAdmin()">✕</button>
+    </div>
+
+    <!-- PIN -->
+    <div id="pinSection">
+      <div class="pin-display" id="pinDisplay">_ _ _ _</div>
+      <div class="pin-grid">
+        <div class="pin-key" onclick="pinKey('1')">1</div>
+        <div class="pin-key" onclick="pinKey('2')">2</div>
+        <div class="pin-key" onclick="pinKey('3')">3</div>
+        <div class="pin-key" onclick="pinKey('4')">4</div>
+        <div class="pin-key" onclick="pinKey('5')">5</div>
+        <div class="pin-key" onclick="pinKey('6')">6</div>
+        <div class="pin-key" onclick="pinKey('7')">7</div>
+        <div class="pin-key" onclick="pinKey('8')">8</div>
+        <div class="pin-key" onclick="pinKey('9')">9</div>
+        <div class="pin-key wide" onclick="pinKey('0')">0</div>
+        <div class="pin-key" onclick="pinBackspace()">⌫</div>
+      </div>
+      <div class="pin-error" id="pinError">Senha incorreta</div>
+    </div>
+
+    <!-- ADMIN CONTENT -->
+    <div class="admin-panel" id="adminPanel">
+      <div class="admin-section">
+        <div class="admin-section-title">Preços Base (R$)</div>
+        <div id="adminPricesDiv"></div>
+      </div>
+      <div class="admin-section">
+        <div class="admin-section-title">Descontos por defeito (R$)</div>
+        <div id="adminDefectsDiv"></div>
+      </div>
+      <div class="admin-section">
+        <div class="admin-section-title">Desconto bateria (R$)</div>
+        <div id="adminBattDiv"></div>
+      </div>
+      <button class="save-btn" onclick="saveAdmin()">💾 Salvar preços</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ===================== DATA =====================
+let prices = {
+  iphone_16_pro_max: 6800,
+  iphone_16_pro: 6000,
+  iphone_16_plus: 5200,
+  iphone_16: 4500,
+  iphone_15_pro_max: 5500,
+  iphone_15_pro: 4800,
+  iphone_15_plus: 4200,
+  iphone_15: 3600,
+  iphone_14_pro_max: 4400,
+  iphone_14_pro: 3800,
+  iphone_14: 3000,
+  iphone_13: 2400,
+  iphone_13_mini: 2000,
+  iphone_12: 1700,
+  iphone_se_3: 1400,
+};
+
+const modelNames = {
+  iphone_16_pro_max:'iPhone 16 Pro Max', iphone_16_pro:'iPhone 16 Pro',
+  iphone_16_plus:'iPhone 16 Plus', iphone_16:'iPhone 16',
+  iphone_15_pro_max:'iPhone 15 Pro Max', iphone_15_pro:'iPhone 15 Pro',
+  iphone_15_plus:'iPhone 15 Plus', iphone_15:'iPhone 15',
+  iphone_14_pro_max:'iPhone 14 Pro Max', iphone_14_pro:'iPhone 14 Pro',
+  iphone_14:'iPhone 14', iphone_13:'iPhone 13',
+  iphone_13_mini:'iPhone 13 Mini', iphone_12:'iPhone 12',
+  iphone_se_3:'iPhone SE (3ª ger.)',
+};
+
+let defects = [
+  { name: 'Tela trincada', discount: 400 },
+  { name: 'Face ID não funciona', discount: 600 },
+  { name: 'Câmera com defeito', discount: 350 },
+  { name: 'Botão lateral quebrado', discount: 150 },
+  { name: 'Touch não responde', discount: 500 },
+  { name: 'Alto-falante com defeito', discount: 200 },
+  { name: 'Carcaça amassada', discount: 250 },
+  { name: 'Carregamento com defeito', discount: 180 },
+];
+
+let battDiscounts = { yellow: 150, red: 300 };
+
+const taxRates = {
+  maquininha: { visa: [0, 1.49, 1.89, 2.09, 2.29, 2.49, 2.69, 2.89, 3.09, 3.29, 3.49, 3.69], debit: 1.39 },
+  link: { visa: [0, 2.49, 2.89, 3.09, 3.29, 3.49, 3.69, 3.89, 4.09, 4.29, 4.49, 4.69], debit: 2.09 },
+};
+
+// STATE
+let state = {
+  model: '',
+  battDiscount: 0,
+  battColor: 'green',
+  defectsSelected: new Set(),
+  payMode: 'maquininha',
+  flag: 'visa',
+};
+
+// ===================== TABS =====================
+function switchTab(name) {
+  document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('tab-' + name).classList.add('active');
+  event.currentTarget.classList.add('active');
+}
+
+// ===================== STEP 1 =====================
+function updateModel() {
+  state.model = document.getElementById('modelSelect').value;
+  const el = document.getElementById('basePrice');
+  if (state.model && prices[state.model]) {
+    el.textContent = fmt(prices[state.model]);
+    el.classList.remove('price-zero');
+  } else {
+    el.textContent = '—';
+    el.classList.add('price-zero');
+  }
+  recalc();
+}
+
+// ===================== STEP 2 =====================
+function selectBatt(el, color, disc) {
+  document.querySelectorAll('.batt-option').forEach(b => {
+    b.className = 'batt-option';
+  });
+  el.classList.add('selected-' + color);
+  state.battDiscount = disc;
+  state.battColor = color;
+  recalc();
+}
+
+// ===================== STEP 3 =====================
+function buildDefects() {
+  const grid = document.getElementById('defectsGrid');
+  grid.innerHTML = '';
+  defects.forEach((d, i) => {
+    const div = document.createElement('div');
+    div.className = 'defect-item' + (state.defectsSelected.has(i) ? ' active' : '');
+    div.onclick = () => toggleDefect(i);
+    div.innerHTML = `
+      <div class="defect-checkbox"><span class="defect-check">✓</span></div>
+      <span class="defect-name">${d.name}</span>
+      <span class="defect-price">−R$ ${d.discount}</span>
+    `;
+    grid.appendChild(div);
+  });
+}
+
+function toggleDefect(i) {
+  if (state.defectsSelected.has(i)) state.defectsSelected.delete(i);
+  else state.defectsSelected.add(i);
+  buildDefects();
+  recalc();
+}
+
+// ===================== RECALC =====================
+function recalc() {
+  if (!state.model || !prices[state.model]) {
+    document.getElementById('summaryBox').style.display = 'none';
+    return;
+  }
+  const base = prices[state.model];
+  const battD = state.battDiscount;
+  let defD = 0;
+  state.defectsSelected.forEach(i => defD += defects[i].discount);
+  const final = Math.max(0, base - battD - defD);
+
+  document.getElementById('summaryBox').style.display = 'block';
+  document.getElementById('finalPrice').textContent = 'R$ ' + fmt(final);
+  document.getElementById('s-base').textContent = 'R$ ' + fmt(base);
+  document.getElementById('s-batt').textContent = battD > 0 ? '−R$ ' + fmt(battD) : 'Sem desconto';
+  document.getElementById('s-defects').textContent = defD > 0 ? '−R$ ' + fmt(defD) : 'Nenhum';
+
+  // preenche simulador
+  document.getElementById('simValue').value = final;
+  calcInstall();
+}
+
+// ===================== INSTALLMENTS =====================
+function selectPayMode(el, mode) {
+  document.querySelectorAll('.pay-btn').forEach(b => b.classList.remove('active'));
+  el.classList.add('active');
+  state.payMode = mode;
+  calcInstall();
+}
+
+function selectFlag(el, flag) {
+  document.querySelectorAll('.flag-btn').forEach(b => b.classList.remove('active'));
+  el.classList.add('active');
+  state.flag = flag;
+  calcInstall();
+}
+
+function getRates() {
+  const pm = taxRates[state.payMode] || taxRates.maquininha;
+  return pm;
+}
+
+function calcInstall() {
+  const val = parseFloat(document.getElementById('simValue').value) || 0;
+  const rates = getRates();
+  const debitRate = rates.debit || 1.39;
+  const creditRates = rates[state.flag] || rates.visa;
+  const debitTotal = val * (1 + debitRate / 100);
+  document.getElementById('debitInfo').textContent =
+    `💳 Débito: R$ ${fmt(debitTotal)} (taxa ${debitRate}%)`;
+
+  const tbody = document.getElementById('installBody');
+  tbody.innerHTML = '';
+  for (let i = 1; i <= 12; i++) {
+    const rate = creditRates[i] || (creditRates[creditRates.length - 1] + (i - creditRates.length) * 0.2);
+    const total = val * (1 + rate / 100);
+    const per = total / i;
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td>${i}x</td>
+      <td>R$ ${fmt(per)}</td>
+      <td>R$ ${fmt(total)}</td>
+      <td style="color:var(--text-muted)">${rate.toFixed(2)}%</td>
+    `;
+    tr.onclick = () => {
+      document.querySelectorAll('#installBody tr').forEach(r => r.classList.remove('selected'));
+      tr.classList.add('selected');
+    };
+    tbody.appendChild(tr);
+  }
+}
+
+// ===================== WHATSAPP =====================
+function updateWA() {
+  const modelo = document.getElementById('wa-modelo').value;
+  const storage = document.getElementById('wa-storage').value;
+  const cor = document.getElementById('wa-cor').value;
+  const batt = document.getElementById('wa-batt').value;
+  const codigo = document.getElementById('wa-codigo').value;
+  const garantia = document.getElementById('wa-garantia').value;
+
+  if (!modelo) { document.getElementById('wa-preview').textContent = 'Preencha os campos acima...'; return; }
+
+  const msg = [
+    `📱 *${modelo} ${storage}*`,
+    cor ? `🎨 Cor: ${cor}` : '',
+    batt ? `🔋 Bateria: ${batt}%` : '',
+    garantia ? `✅ Garantia: ${garantia} meses` : '',
+    codigo ? `🔖 Código: ${codigo}` : '',
+    '',
+    `💰 Aceitamos PIX, cartão e parcelamento!`,
+    `📲 Chame para saber mais!`,
+  ].filter(Boolean).join('\n');
+
+  document.getElementById('wa-preview').textContent = msg;
+}
+
+function copyWA() {
+  const text = document.getElementById('wa-preview').textContent;
+  navigator.clipboard.writeText(text).then(() => showToast('✅ Copiado para a área de transferência!'));
+}
+
+// ===================== ADMIN =====================
+let pinEntry = '';
+const PIN = '1234';
+
+function openAdmin() {
+  pinEntry = '';
+  document.getElementById('pinDisplay').textContent = '_ _ _ _';
+  document.getElementById('pinError').style.display = 'none';
+  document.getElementById('pinSection').style.display = 'block';
+  document.getElementById('adminPanel').classList.remove('open');
+  document.getElementById('adminOverlay').classList.add('open');
+}
+
+function closeAdmin() {
+  document.getElementById('adminOverlay').classList.remove('open');
+}
+
+function pinKey(k) {
+  if (pinEntry.length >= 4) return;
+  pinEntry += k;
+  const dots = '●'.repeat(pinEntry.length) + ('_ '.repeat(4 - pinEntry.length)).trim().replace(/ /g, ' _ ').replace(/_ $/,'_');
+  document.getElementById('pinDisplay').textContent = '●'.repeat(pinEntry.length).padEnd(4, ' ').split('').map((c,i)=> i < pinEntry.length ? '●' : '_').join(' ');
+  if (pinEntry.length === 4) {
+    setTimeout(() => {
+      if (pinEntry === PIN) {
+        document.getElementById('pinSection').style.display = 'none';
+        buildAdminPanel();
+        document.getElementById('adminPanel').classList.add('open');
+      } else {
+        document.getElementById('pinError').style.display = 'block';
+        pinEntry = '';
+        document.getElementById('pinDisplay').textContent = '_ _ _ _';
+      }
+    }, 200);
+  }
+}
+
+function pinBackspace() {
+  pinEntry = pinEntry.slice(0, -1);
+  const disp = Array(4).fill('_');
+  for (let i = 0; i < pinEntry.length; i++) disp[i] = '●';
+  document.getElementById('pinDisplay').textContent = disp.join(' ');
+}
+
+function buildAdminPanel() {
+  // Prices
+  const pdiv = document.getElementById('adminPricesDiv');
+  pdiv.innerHTML = '';
+  Object.entries(modelNames).forEach(([key, name]) => {
+    const row = document.createElement('div');
+    row.className = 'price-row';
+    row.innerHTML = `<label>${name}</label><input type="number" id="ap-${key}" value="${prices[key] || 0}">`;
+    pdiv.appendChild(row);
+  });
+
+  // Defects
+  const ddiv = document.getElementById('adminDefectsDiv');
+  ddiv.innerHTML = '';
+  defects.forEach((d, i) => {
+    const row = document.createElement('div');
+    row.className = 'price-row';
+    row.innerHTML = `<label>${d.name}</label><input type="number" id="ad-${i}" value="${d.discount}">`;
+    ddiv.appendChild(row);
+  });
+
+  // Battery
+  const bdiv = document.getElementById('adminBattDiv');
+  bdiv.innerHTML = `
+    <div class="price-row"><label>Entre 60–85%</label><input type="number" id="ab-yellow" value="${battDiscounts.yellow}"></div>
+    <div class="price-row"><label>Abaixo de 60%</label><input type="number" id="ab-red" value="${battDiscounts.red}"></div>
+  `;
+}
+
+function saveAdmin() {
+  Object.keys(modelNames).forEach(key => {
+    const v = parseFloat(document.getElementById('ap-' + key)?.value);
+    if (!isNaN(v)) prices[key] = v;
+  });
+  defects.forEach((d, i) => {
+    const v = parseFloat(document.getElementById('ad-' + i)?.value);
+    if (!isNaN(v)) d.discount = v;
+  });
+  battDiscounts.yellow = parseFloat(document.getElementById('ab-yellow').value) || 150;
+  battDiscounts.red = parseFloat(document.getElementById('ab-red').value) || 300;
+
+  buildDefects();
+  updateModel();
+  closeAdmin();
+  showToast('✅ Preços salvos com sucesso!');
+}
+
+// ===================== UTILS =====================
+function fmt(n) {
+  return Number(n).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2500);
+}
+
+// ===================== INIT =====================
+buildDefects();
+calcInstall();
+</script>
+</body>
+</html>
